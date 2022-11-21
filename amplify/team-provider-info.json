@@ -1,0 +1,39 @@
+{
+  "master": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-lts-master-132821-authRole",
+      "UnauthRoleArn": "arn:aws:iam::132531261819:role/amplify-lts-master-132821-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::132531261819:role/amplify-lts-master-132821-authRole",
+      "Region": "eu-central-1",
+      "DeploymentBucketName": "amplify-lts-master-132821-deployment",
+      "UnauthRoleName": "amplify-lts-master-132821-unauthRole",
+      "StackName": "amplify-lts-master-132821",
+      "StackId": "arn:aws:cloudformation:eu-central-1:132531261819:stack/amplify-lts-master-132821/05fe5640-2920-11ed-b639-02a40d8c43d2",
+      "AmplifyAppId": "dnuud8gq7c7d4",
+      "APIGatewayAuthURL": "https://s3.amazonaws.com/amplify-lts-master-132821-deployment/amplify-cfn-templates/api/APIGatewayAuthStack.json"
+    },
+    "categories": {
+      "auth": {
+        "ltsf4f53b30": {}
+      },
+      "function": {
+        "ltsf4f53b30PostConfirmation": {
+          "deploymentBucketName": "amplify-lts-master-132821-deployment",
+          "s3Key": "amplify-builds/ltsf4f53b30PostConfirmation-723870716b3056306b71-build.zip"
+        },
+        "ltsEmailInvites": {
+          "deploymentBucketName": "amplify-lts-master-132821-deployment",
+          "s3Key": "amplify-builds/ltsEmailInvites-2f48346e6e6574484678-build.zip"
+        },
+        "extConnector": {
+          "deploymentBucketName": "amplify-lts-master-132821-deployment",
+          "s3Key": "amplify-builds/extConnector-3664436e6e41484c544c-build.zip"
+        },
+        "LTSAuthProfile": {
+          "deploymentBucketName": "amplify-lts-master-132821-deployment",
+          "s3Key": "amplify-builds/LTSAuthProfile-6d474375307975617947-build.zip"
+        }
+      }
+    }
+  }
+}

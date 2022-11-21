@@ -1,0 +1,1121 @@
+# ----------------------------------
+# === AZIENDA
+#----------------------------------
+type Company @model ( queries: { list: "listCompanies", get: "getCompany" }, subscriptions: null)
+@key(name: "companyByVatNumber", fields: ["vatNumber", "city"], queryField:"companyByVatNumber")
+@key(name: "companyByName", fields: ["name"], queryField:"companyByName")
+@key(name: "companyByCompanyCode", fields: ["companyCode"], queryField:"companyByCompanyCode")
+@key(name: "companyByFiscalCode", fields: ["fiscalCode"], queryField:"companyByFiscalCode")
+@auth(rules: [
+  { allow: owner },
+  { allow: private, operations: [ create, read ]},
+  { allow: public, operations: [ create, read ]},
+]){
+  id: ID!
+  companyCode: ID!
+  vatNumber: ID!
+  name: String!
+  fiscalCode: ID!
+  tag: ID! # !ALERT: per compatibilità - da rimuovere in seguito perché corrisponde allo stesso valore di id
+  city: String!
+  address: String!
+  location: Location
+  uniqueCode: String
+  pec: String
+  emails: [KeyValueType]
+  phones: [KeyValueType]
+  logo: S3Object
+  trades: [String]
+  owner: String @auth(rules: [{ allow: public, operations: [ create ]}, { allow: private, operations: [ create, read ]}, { allow: groups, groups: ["developers"] } ])
+  profiles: [Profile] @connection(keyName: "profileByTenant", fields:["id"]) # dipendenti che hanno accesso alla piattaforma 
+  customers: [Customer] @connection(keyName: "customerByTenant", fields:["id"]) # contatti aziendali, clienti, destiantari
+  contacts: [Contact] @connection(keyName: "contactByTenant", fields:["id"]) 
+  warehouses: [Warehouse] @connection(keyName: "warehouseByTenant", fields:["id"])
+  vehicles: [Vehicle] @connection(keyName: "vehicleByCompany", fields:["id"])
+  customerPalletHandlings: [PalletHandling] @connection(keyName: "palletHandlingByCustomerOperationDate", fields:["id"])
+  carrierPalletHandlings: [PalletHandling] @connection(keyName: "palletHandlingByCarrierOperationDate", fields:["id"])
+  reversalPalletHandlings: [PalletHandling] @connection(keyName: "palletHandlingByReversalOperationDate", fields:["id"])
+  log: [Log]
+  type: CompanyType
+  authorCustomersRaw: AWSJSON # Qui inseriamo i dati del cliente che ha registrato l'azienda, così potrà essere creato nella rubrica dell'azienda dal momento in cui viene creato l'account
+  # palletWallet: PalletWallet @connection(fields: ["tag"])
+  # pricelist: [PriceList] @connection(keyName: "priceListByCompany" fields: ["companyId"])
+  # vehicles: [Vehicle] @connection(keyName:"vehicleByCompany" fields:["companyId"])
+}
+
+
+# ----------------------------------
+# === PROFILO
+#----------------------------------
+type Profile @model (subscriptions: null)
+@key(name: "profileByTenant", fields: ["tenant", "searchable"], queryField:"profileByTenant")
+@key(name: "profileByFiscalCode", fields: ["fiscalCode"], queryField:"profileByFiscalCode")
+@key(name: "profileBySearchable", fields: ["searchable"], queryField:"profileBySearchable")
+@key(name: "profileByEmail", fields: ["email"], queryField:"profileByEmail")
+@auth(rules: [{ allow: owner }]){
+  id: ID!
+  username: ID!
+  fiscalCode: String!
+  email: String!
+  searchable: String!
+  name: String
+  surname: String
+  phone: String
+  avatar: S3Object
+  deviceId: String
+  owner: ID @auth(rules: [{ allow: owner, operations: [read, delete] }])
+  tenant: ID!
+  company: Company @connection(fields:["tenant"])
+  roleIds: [Int]
+  psw: String
+  refreshTokens: [String]
+  note: String
+  log: [Log]
+}
+
+# ----------------------------------
+# === CLIENTI
+#----------------------------------
+type Customer @model
+@key(name: "customerByVatNumber", fields: ["vatNumber"], queryField:"customerByVatNumber")
+@key(name: "customerBySearchable", fields: ["searchable"], queryField:"customerBySearchable")
+@key(name: "customerByCompanyCode", fields: ["companyCode"], queryField:"customerByCompanyCode")
+@key(name: "customerByCompanyId", fields: ["companyId"], queryField:"customerByCompanyId")
+@key(name: "customerByTenant", fields: ["tenant", "searchable"], queryField:"customerByTenant")
+@key(name: "senderCustomerByTenant", fields: ["tenant", "isSender", "searchable"], queryField:"senderCustomerByTenant")
+@key(name: "carrierCustomerByTenant", fields: ["tenant", "isCarrier", "searchable"], queryField:"carrierCustomerByTenant")
+@key(name: "receiverCustomerByTenant", fields: ["tenant", "isReceiver", "searchable"], queryField:"receiverCustomerByTenant")
+@auth(rules: [
+  { allow: owner },
+]) {
+  id: ID!
+  name: String!
+  vatNumber: String!
+  searchable: String!
+  companyCode: String!
+  tenant: ID!
+  companyId: ID! # per la relazione con l'azienda cliente
+  company: Company @connection(fields:["companyId"])
+  isSender: Int! # 0 || 1
+  isCarrier: Int! # 0 || 1
+  isReceiver: Int! # 0 || 1
+  relationships: [CustomerType]
+  customCheckpoints: [Checkpoint] # checkpoint aggiuntivi personalizzati
+  customPec: String
+  customUniqueCode: String
+  customEmails: [KeyValueType]
+  customPhones: [KeyValueType]
+  customTrades: [String]
+  invited: AWSTimestamp 
+  log: [Log]
+  note: String
+}
+
+# ----------------------------------
+# === CONTATTI
+#----------------------------------
+type Contact @model (subscriptions: null)
+@key(name: "contactByTenant", fields: ["tenant", "searchable"], queryField:"contactByTenant")
+@key(name: "contactByTenantType", fields: ["tenant", "type", "searchable"], queryField:"contactByTenantType")
+@key(name: "employeeByTenant", fields: ["tenant", "employee", "searchable"], queryField:"employeeByTenant")
+@key(name: "employeeByTenantType", fields: ["tenant", "employee", "type", "searchable"], queryField:"employeeByTenantType")
+@auth(rules: [
+  { allow: owner },
+]) {
+  id: ID!
+  tenant: ID!
+  name: String!
+  surname: String!
+  searchable: String!
+  fiscalCode: String
+  phone: String
+  email: String
+  type: ContactType!
+  avatar: S3Object
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+  employee: Int!
+  jobId: ID
+  job: Company @connection(fields:["jobId"])
+  jobName: String
+  invited: AWSTimestamp 
+  log: [Log]
+  windows: [Window]
+  note: String
+}
+
+# ----------------------------------
+# === MAGAZZINI
+#----------------------------------
+type Warehouse @model (subscriptions: null) 
+@key(name: "warehouseByTenant", fields: ["tenant", "status", "searchable"], queryField:"warehouseByTenant")
+@key(name: "depositWarehouseByTenant", fields: ["tenant", "isDeposit", "status"], queryField:"depositWarehouseByTenant")
+@key(name: "interWarehouseByTenant", fields: ["tenant", "isInter", "status"], queryField:"interWarehouseByTenant")
+@key(name: "hubWarehouseByTenant", fields: ["tenant", "isHub", "status"], queryField:"hubWarehouseByTenant")
+@key(name: "linkedWarehouseByTenant", fields: ["tenant", "isLinked", "status"], queryField:"linkedWarehouseByTenant")
+@auth(rules: [
+  { allow: owner },
+  { allow: private, operations: [ read ]},
+  { allow: public, operations: [ create, read ]},
+]) {
+  id: ID!
+  extId: ID # link usato per relazionarci con software di pianificazione (36 char - uuid v4) 
+  tenant: ID!
+  name: String!
+  searchable: String!
+  status: WarehouseStatus! # ACTIVE DISABLED UNKNOWN
+  location: Location
+  windows: [Window]
+  contactIds: [String]
+  contacts: [ContactSummary]
+  owner: String
+  specialization: WarehouseSpecialization #utilizzo generale, bobine, deperibili, piccole dimensioni, ecc...
+  scope: [WarehouseScope] # deposito, magazzino intermedio, hub distributivo
+  maxLength: String
+  enabledVehicles: [ComplexVehicleType]
+  tools: [WarehouseTools]
+  automationLevel: WarehouseAutomationLevel # basso, medio, totale
+  type: WarehouseBuildingType
+  isDeposit: Int! # deposito
+  isInter: Int! # magazzino intermedio
+  isHub: Int! # hub distributivo
+  isLinked: Int! # è un magazzino gestito da terze parti (è 0 quando un magazzino ha qualsiasi altro valore impostato in isDeposit, isHub e isInt)
+  warehouseLinkId: ID
+  warehouseLink: WarehouseLink @connection(fields:["warehouseLinkId"]) # Collegamento magazzino di terze parti
+  log: [Log]
+  note: String
+}
+
+type WarehouseLink @model (subscriptions: null) 
+@key(name: "warehouseLinkByClient", fields: ["tenantClient"], queryField:"warehouseLinkByClient")
+@key(name: "warehouseLinkByOwner", fields: ["tenantOwner"], queryField:"warehouseLinkByOwner")
+@auth(rules: [
+  { allow: owner },
+  { allow: owner, groupsField: "tenantClient" },
+  { allow: owner, groupsField: "tenantOwner" },
+  { allow: private, operations: [ read ]},
+]){
+  id: ID!
+  companyClient: Company @connection(fields:["tenantClient"])
+  companyClientSummary: CompanySummary
+  tenantClient: ID! # DA MODIFICARE IN OWNERID DELL'AZIENDA CLIENTE ... id dell'azienda cliente
+  tenantOwner: ID! # DA MODIFICARE IN OWNERID DELL'AZIENDA PROPRIETARIA ... id dell'azienda proprietaria
+  companyOwnerSummary: CompanySummary
+  companyOwner: Company @connection(fields:["tenantOwner"])
+  warehouseId: ID! # qui si indica l'id del magazzino del proprietario
+  warehouse: Warehouse @connection(fields: ["warehouseId"]) 
+  log: [Log]
+}
+
+# ----------------------------------
+# === VEICOLI
+#----------------------------------
+type Vehicle @model(subscriptions: null)
+@key(name:"vehicleByCompany", fields:["companyId", "licensePlate"], queryField: "vehicleByCompany")
+@key(name:"vehicleByCompanyType", fields:["companyId", "type", "licensePlate"], queryField: "vehicleByCompanyType")
+@key(name:"vehicleByCompanyStatusType", fields:["companyId", "status", "type"], queryField: "vehicleByCompanyStatusType")
+@auth(rules: [
+  { allow: owner },
+]){
+  id: ID!
+  licensePlate: String!
+  companyId: ID!
+  type: VehicleType!
+  brand: String
+  model: String
+  dimensions: VehicleDimensions
+  createdAt: String
+  updatedAt: String
+  bulkhead: BulkheadType #paratia: nessuna, mobile o fissa
+  tailLift: Int # sponda idraulica (montacarichi) installata: true / false
+  fuel: String
+  spot: Int # posti disponibili sul mezzo
+  axle: Int # n assi del mezzo
+  maxWeight: Float
+  kilometers: Float
+  booking: [String] # elenco date impegnate del mezzo
+  status: VehicleStatus
+  lastPosition: Location # [lat, lng]
+  indipendent: Boolean # autonomo / non autonomo
+  log: [Log]
+  note: String
+}
+
+# # ----------------------------------
+# # === TIPOLOGIE PER ORDINI
+# #-----------------------------------
+type PreOrder @model (subscriptions: null)
+@key(name:"preOrderByStamp", fields: ["stamp"], queryField:"preOrderByStamp")
+@key(name:"preOrderByCarrier", fields: ["carrierId", "createdAt"], queryField:"preOrderByCarrier")
+@key(name:"preOrderBySender", fields: ["senderId", "createdAt"], queryField:"preOrderBySender")
+@key(name:"preOrderByStorage", fields: ["storageId", "createdAt"], queryField:"preOrderByStorage")
+@key(name:"preOrderByCarrierStatus", fields: ["carrierId", "status", "createdAt"], queryField:"preOrderByCarrierStatus")
+@key(name:"preOrderBySenderStatus", fields: ["senderId", "status", "createdAt"], queryField:"preOrderBySenderStatus")
+@key(name:"preOrderByStorageStatus", fields: ["storageId", "status", "createdAt"], queryField:"preOrderByStorageStatus")
+@auth(rules: [
+  { allow: owner, ownerField: "tenantSender", operations: [create, read, update, delete]},
+  { allow: owner, ownerField: "tenantCarrier", operations: [create, read, update, delete]},
+  { allow: owner, ownerField: "tenantStorage", operations: [read]},
+]){
+  id: ID!
+  stamp: ID! #readable id PRE-DOFBRPE4
+  name: String!
+  # Ids
+  carrierId: ID! # company id
+  senderId: ID! # company id
+  storageId: ID! # company id
+  # Owners
+  tenantCarrier: String #owner carrier
+  tenantSender: String # owner sender
+  tenantStorage: String # owner storage
+  # Names
+  senderName: String!
+  carrierName: String!
+  storageName: String!
+  # VATs
+  senderVat: String!
+  carrierVat: String!
+  storageVat: String!
+  shipmentType: ShipmentType!
+  pickupDateStart: AWSDateTime!
+  pickupDateEnd: AWSDateTime
+  status: PreOrderStatus! # PENDING ACCEPTED REJECTED
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime
+  completedAt: AWSDateTime
+  vehicleType: String
+  deliveryAreas: [String]
+  deliveryRegions: [String]
+  slot: Int! # numero di basi 80x120 che intendo trasportare
+  perishable: Boolean #prodotti deperibili?
+  checkpoint: Checkpoint
+  address: String # <-- Serve per le richerche...
+  trades: [String]
+  files: [S3Object]
+  log: [Log]
+  note: String
+  billingType: BillingType
+  orders: [Order] @connection(keyName:"orderByPreOrderId" fields: ["id"])
+}
+
+type Order @model (subscriptions: null)
+# (2 fields) tenant, [status, createdAt]
+@key(name:"orderByPreOrderId", fields: ["preOrderId", "createdAt"], queryField:"orderByPreOrderId")
+@key(name:"orderByStamp", fields: ["stamp", "createdAt"], queryField:"orderByStamp")
+@key(name:"orderByCarrierCreatedAt", fields: ["carrierId", "createdAt"], queryField:"orderByCarrierCreatedAt")
+@key(name:"orderBySenderCreatedAt", fields: ["senderId", "createdAt"], queryField:"orderBySenderCreatedAt")
+@key(name:"orderByReceiverCreatedAt", fields: ["receiverId", "createdAt"], queryField:"orderByReceiverCreatedAt")
+@key(name:"orderByPickupStorageCreatedAt", fields: ["pickupStorageId", "createdAt"], queryField:"orderByPickupStorageCreatedAt")
+@key(name:"orderByDeliveryStorageCreatedAt", fields: ["deliveryStorageId", "createdAt"], queryField:"orderByDeliveryStorageCreatedAt")
+# (3 fields) tenant, status, createdAt
+@key(name:"orderByCarrierStatusCompletedAt", fields: ["carrierId", "status", "completedAt"], queryField:"orderByCarrierStatusCompletedAt")
+@key(name:"orderByCarrierStatusCreatedAt", fields: ["carrierId", "status", "createdAt"], queryField:"orderByCarrierStatusCreatedAt")
+@key(name:"orderBySenderStatusCreatedAt", fields: ["senderId", "status", "createdAt"], queryField:"orderBySenderStatusCreatedAt")
+@key(name:"orderByReceiverStatusCreatedAt", fields: ["receiverId", "status", "createdAt"], queryField:"orderByReceiverStatusCreatedAt")
+@key(name:"orderByPickupStorageStatusCreatedAt", fields: ["pickupStorageId", "status", "createdAt"], queryField:"orderByPickupStorageStatusCreatedAt")
+@key(name:"orderByDeliveryStorageStatusCreatedAt", fields: ["deliveryStorageId", "status", "createdAt"], queryField:"orderByDeliveryStorageStatusCreatedAt")
+# For travel query
+@key(name:"orderByCarrierStatusPickupStorageCreatedAt", fields: ["carrierId", "status", "pickupStorageId", "createdAt"], queryField:"orderByCarrierStatusPickupStorageCreatedAt")
+# For checks query
+@key(name:"orderByCarrierCollectChecksStatus", fields: ["carrierId", "collectChecks", "status"], queryField:"orderByCarrierCollectChecksStatus")
+@key(name:"orderByReceiverCollectChecksStatus", fields: ["receiverId", "collectChecks", "status"], queryField:"orderByReceiverCollectChecksStatus")
+# For ext connection (maurizio)
+@key(name:"orderByCarrierStatusSenderVatCompletedAt", fields: ["carrierId", "status", "senderVat", "completedAt"], queryField:"orderByCarrierStatusSenderVatCompletedAt")
+@key(name:"orderByCarrierStatusSenderVatCreatedAt", fields: ["carrierId", "status", "senderVat", "createdAt"], queryField:"orderByCarrierStatusSenderVatCreatedAt")
+@auth(rules: [
+  { allow: owner },
+  { allow: owner, ownerField: "tenantCarrier", operations: [ create, read, update ]},
+  { allow: owner, ownerField: "tenantSender", operations: [ create, read, update, delete ]},
+  { allow: owner, ownerField: "tenantReceiver", operations: [ read ]},
+  { allow: owner, ownerField: "tenantPickupStorage", operations: [ read ]},
+  { allow: owner, ownerField: "tenantDeliveryStorage", operations: [ read ]},
+]){
+  id: ID!
+  extId: ID # link usato per relazionarci con software di pianificazione (36 char) 
+  stamp: ID!
+  name: String!
+  # Ids
+  preOrderId: ID!
+  carrierId: ID!
+  senderId: ID!
+  receiverId: ID!
+  pickupStorageId: ID!
+  deliveryStorageId: ID!
+  # Owners
+  tenantCarrier: ID!
+  tenantSender: ID!
+  tenantReceiver: ID!
+  tenantPickupStorage: ID!
+  tenantDeliveryStorage: ID!
+  # Names
+  carrierName: String!
+  senderName: String!
+  receiverName: String!
+  pickupStorageName: String!
+  deliveryStorageName: String!
+  # VATs
+  carrierVat: String!
+  senderVat: String!
+  receiverVat: String!
+  pickupStorageVat: String!
+  deliveryStorageVat: String!
+  # Meta dattes
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
+  completedAt: AWSDateTime
+  # Info di trasporto pickup & delivery
+  paymentCondition: PaymentCondition
+  shipmentType: ShipmentType!
+  pickupCheckpoint: Checkpoint #luogo e info relative al punto di carico (copia da pre-order)
+  pickupDateStart: AWSDateTime! #prendo in considerazione il primo valore di pickup date (start) che fornisco
+  pickupDateEnd: AWSDateTime #prendo in considerazione il primo valore di pickup date (end) che fornisco
+  pickupSlots: [DateTimeSlot] # date aggiuntive di carico (max. 2)
+  depotCheckpoint: Checkpoint # luogo in cui sarà depositato l'ordine
+  depotDateStart: AWSDateTime #prendo in considerazione il primo valore di depot date (start) che fornisco
+  depotDateEnd: AWSDateTime #prendo in considerazione il primo valore di depot date (end) che fornisco
+  depotSlots: [DateTimeSlot] # date aggiuntive di deposito (max. 2)
+  deliveryCheckpoint: Checkpoint # luogo e info relative al punto di destinazione
+  deliveryDateStart: AWSDateTime! #prendo in considerazione l'ultimo valore di delivery (start) che fornisco
+  deliveryDateEnd: AWSDateTime #prendo in considerazionel'ultimo valore di delivery (end) che fornisco
+  deliverySlots: [DateTimeSlot] # date aggiuntive di scarico (max. 2)
+  pickupAddress: String
+  deliveryAddress: String
+  depotAddress: String
+  availability: DateTimeSlot # intervallo di tempo entro il quale l'ordine può essere gestito (da: data di accettazione del pre-ordine, se esistente a: data di consegna inserita) 
+  status: OrderStatus!
+  orderNumber: String
+  # Ex orderContent
+  trades: [String]
+  docs: [DeliveryDocs] 
+  support: String # Pallet, roll container, cassa / barile, sacco, container
+  warnings: [String] #
+  quantity: Int
+  size: String # es.80x120, 100x120
+  temperature: Float
+  loadingMeter: Float
+  grossWeight: Float # peso lordo
+  netWeight: Float # peso netto
+  packages: Int # numero di colli
+  perishable: Boolean
+  stackable: Boolean
+  palletInfo: [PalletInfo]
+  # Billing customer info
+  customer: CompanySummary
+  # Tracking
+  lastPosition: Location
+  # Checks
+  collectChecks: Int # Ritiro l'assegno?
+  checksAmount: Float
+  checks: [Check] @connection(keyName:"checksByOrderId")
+  travels: [TravelsOrders] @connection(keyName:"travelsOrdersByOrder" fields:["id"])
+  # Company
+  sender: Company @connection(fields:["senderId"])
+  carrier: Company @connection(fields:["carrierId"])
+  receiver: Company @connection(fields:["receiverId"])
+  pickupStorage: Company @connection(fields:["pickupStorageId"])
+  deliveryStorage: Company @connection(fields:["deliveryStorageId"])
+  # Additional data
+  log: [Log]
+  billingType: BillingType
+  note: String
+}
+
+type Check @model (subscriptions: null)
+@key(name:"checkByStamp", fields: ["stamp"], queryField:"checkByStamp")
+@key(name:"checkByOrderId", fields: ["orderId", "orderCreationDate"], queryField:"checkByOrderId")
+# (2 fields) tenant, []
+@key(name:"checkByCarrier", fields: ["carrierId", "orderCreationDate"], queryField:"checkByCarrier")
+@key(name:"checkBySender", fields: ["senderId", "orderCreationDate"], queryField:"checkBySender")
+@key(name:"checkByReceiver", fields: ["receiverId", "orderCreationDate"], queryField:"checkByReceiver")
+# (3 fields) tenant, status, date
+@key(name:"checkBySenderStatus", fields: ["senderId", "status", "orderCreationDate"], queryField:"checkBySenderStatus")
+@key(name:"checkByCarrierStatus", fields: ["carrierId", "status", "orderCreationDate"], queryField:"checkByCarrierStatus")
+@key(name:"checkByReceiverStatus", fields: ["receiverId", "status", "orderCreationDate"], queryField:"checkByReceiverStatus")
+# # (4 fields) tenant, status, date, tenantClient
+@key(name: "checkBySenderStatusCarrierDate", fields: ["senderId", "status", "carrierName", "orderCreationDate"], queryField: "checkBySenderStatusCarrierDate")
+@key(name: "checkBySenderStatusReceiverDate", fields: ["senderId", "status", "receiverName", "orderCreationDate"], queryField: "checkBySenderStatusReceiverDate")
+@key(name: "checkByCarrierStatusSenderDate", fields: ["carrierId", "status", "senderName", "orderCreationDate"], queryField: "checkByCarrierStatusSenderDate")
+@key(name: "checkByCarrierStatusReceiverDate", fields: ["carrierId", "status", "receiverName", "orderCreationDate"], queryField: "checkByCarrierStatusReceiverDate")
+@key(name: "checkByReceiverStatusSenderDate", fields: ["receiverId", "status", "senderName", "orderCreationDate"], queryField: "checkByReceiverStatusSenderDate")
+@key(name: "checkByReceiverStatusCarrierDate", fields: ["receiverId", "status", "carrierName", "orderCreationDate"], queryField: "checkByReceiverStatusCarrierDate")
+@auth(rules: [
+  { allow: owner, operations: [ delete ]},
+  { allow: owner, ownerField: "tenantCarrier", operations: [ create, read, update, delete ]},
+  { allow: owner, ownerField: "tenantReceiver", operations: [ create, read, update, delete ]},
+  { allow: owner, ownerField: "tenantSender", operations: [read, update]}
+]){
+  id: ID! # (encoded: CHK_[GENERATED_NUM]_ORDERID(SENZA PREFISSO ORD_)_CHECKTIMESTAMP)
+  orderCreationDate: AWSDateTime! # data di creazione ordine
+  stamp: ID!
+  # Relations
+  orderId: ID!
+  order: Order @connection(fields: ["orderId"])
+  orderStamp: ID
+  entryTravelId: ID # id viaggio ingresso
+  exitTravelId: ID # id viaggio uscita
+  keyDocNum: String # Numero documento chiave, utilizzato per le query
+  docsRef: [DeliveryDocs] # collegamento con documento estratto dall'ordine
+  # Companies
+  receiverId: ID!
+  tenantReceiver: String
+  receiverName: String!
+  senderId: ID!
+  senderName: String!
+  tenantSender: String
+  carrierId: ID!
+  tenantCarrier: String
+  carrierName: String!
+  beneficiary: String
+  # Dates
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
+  issuingDate: AWSDateTime # data di emissione
+  pickupDate: AWSDateTime # data di ritiro
+  checkInDate: AWSDateTime # data di arrivo in sede amministrativa / registrazione
+  checkOutDate: AWSDateTime # data di uscita dalla sede amministrativa
+  deliveryDate: AWSDateTime # data di consegna
+  expiration: AWSDateTime # data di scadenza dell'assegno
+  # Check data
+  checkNum: String
+  amount: Float
+  iban: String
+  status: CheckStatus
+  # Attachments
+  image: S3Object
+  files: [S3Object]
+  note: String
+  log: [Log]
+}
+
+type Travel  @model(subscriptions: null)
+@key(name:"travelByStampCreatedAt", fields: ["stamp", "createdAt"], queryField: "travelByStampCreatedAt")
+@key(name:"travelByCarrierDepartureDate", fields: ["carrierId", "departureDate"], queryField: "travelByCarrierDepartureDate")
+@key(name:"travelByCarrierStatusDepartureDate", fields: ["carrierId", "status", "departureDate"], queryField: "travelByCarrierStatusDepartureDate")
+@key(name:"travelByCarrierStatusDriverDeparture", fields: ["carrierId", "status", "driverName", "departureDate"], queryField: "travelByCarrierStatusDriverDeparture")
+@key(name:"travelByCarrierStatusLicenseDeparture", fields: ["carrierId", "status", "licensePlate", "departureDate"], queryField: "travelByCarrierStatusLicenseDeparture")
+@auth(rules: [
+  { allow: owner, operations: [ create, read, update, delete ]}
+  { allow: owner, groupsField: "ownerField", operations:  [ create, read, update, delete ]}
+]){
+  id: ID! # hash del seguente codice: TRV_{STAMP}_{vatNumber}+{tenant}_{licensePlate}_{departureDate}_{timestamp}
+  stamp: ID!
+  carrierId: ID!
+  tenant: ID!
+  status: TravelStatus!
+  createdAt: AWSDateTime!
+  departureDate: AWSDateTime!
+  updatedAt: AWSDateTime
+  # Global info
+  licensePlate: String!
+  vehicleName: String!
+  driverName: String! # Da richiedere esportazione pianificatore
+  driver: ProfileSummary
+  estimatedTravelTime: String
+  estimatedTravelLength: String
+  estimatedTransportCosts: String
+  orders: [TravelsOrders] @connection(keyName:"travelsOrdersByTravel" fields:["id"])
+  palletHandlings: [PalletHandling] @connection(keyName: "palletHandlingByTravelCreatedAt" fields: ["id"])
+  # Details info
+  start: Waypoint # Da richiedere esportazione pianificatore
+  waypoints: [Waypoint]
+  end: Waypoint # Da richiedere esportazione pianificatore
+  plannedOrderIds: [ID] # Es. OrderStatus#OrderId : serve per escludere dall'elenco degli ordini da pianificare, quelli già pianificati
+  travelType: TravelType
+  # Tracking
+  lastPosition: Location
+  note: String
+  log: [Log]
+}
+
+type TravelsOrders @model(subscriptions: null, queries: null)
+@key(name:"travelsOrdersByTravel", fields: ["travelId", "arrivalDate"])
+@key(name:"travelsOrdersByOrder", fields: ["orderId", "arrivalDate"])
+@key(name:"travelsOrdersByCustomer", fields: ["customerId", "arrivalDate"], , queryField: "travelsOrdersByCustomer")
+@key(name:"travelsOrdersByCarrier", fields: ["carrierId", "arrivalDate"], , queryField: "travelsOrdersByCarrier")
+@auth(rules: [
+  { allow: owner, ownerField: "tenantCarrier", operations:  [ create, read, update, delete ]}
+  { allow: owner, ownerField: "tenantCustomer", operations:  [ read ]}
+]){
+  id: ID! # plannedId = `${order.indexOp}_${order.status}_${order[targetCheckpoint].location.place_id}_${order.id}`
+  departureDate: AWSDateTime!
+  arrivalDate: AWSDateTime! # estimated value
+  carrierId: ID!
+  tenantCarrier: ID!
+  customerId: ID!
+  tenantCustomer: ID!
+  orderId: ID!
+  travelId: ID!
+  order: Order @connection(fields: ["orderId"])
+  travel: Travel @connection(fields: ["travelId"]) @auth(rules: [
+    { allow: owner, ownerField: "tenantCarrier", operations:  [ read, update ]},
+    { allow: owner, ownerField: "tenantCustomer", operations: [ read ]},
+  ])
+  waypoint: Waypoint
+  operation: String
+  operationValue: Int
+}
+
+type PalletHandling @model(subscriptions: null)
+@key(name:"palletHandlingByStamp", fields: ["stamp"], queryField: "palletHandlingByStamp")
+# NEW:
+@key(name:"palletHandlingByStatusOperationDate", fields: ["status", "operationDate"], queryField: "palletHandlingByStatusOperationDate")
+@key(name:"palletHandlingByStatusCarrierDate", fields: ["status", "carrierId", "operationDate"], queryField: "palletHandlingByStatusCarrierDate")
+@key(name:"palletHandlingByStatusCustomerDate", fields: ["status", "customerId", "operationDate"], queryField: "palletHandlingByStatusCustomerDate")
+@key(name:"palletHandlingByStatusReversalDate", fields: ["status", "reversalId", "operationDate"], queryField: "palletHandlingByStatusReversalDate")
+@key(name:"palletHandlingByStatusTravelDate", fields: ["status", "travelStamp", "operationDate"], queryField: "palletHandlingByStatusTravelDate")
+@key(name:"palletHandlingByStatusTypeDate", fields: ["status", "type", "operationDate"], queryField: "palletHandlingByStatusTypeDate")
+@key(name:"palletHandlingByCarrierOperationDate", fields: ["carrierId", "operationDate"], queryField: "palletHandlingByCarrierOperationDate")
+@key(name:"palletHandlingByCustomerOperationDate", fields: ["customerId", "operationDate"], queryField: "palletHandlingByCustomerOperationDate")
+@key(name:"palletHandlingByReversalOperationDate", fields: ["reversalId", "operationDate"], queryField: "palletHandlingByReversalOperationDate")
+# OLD:
+# By type
+@key(name:"palletHandlingByCarrierTypeOperationDate", fields: ["carrierId", "type", "operationDate"], queryField: "palletHandlingByCarrierTypeOperationDate")
+@key(name:"palletHandlingByCustomerTypeOperationDate", fields: ["customerId", "type", "operationDate"], queryField: "palletHandlingByCustomerTypeOperationDate")
+# By travel
+@key(name:"palletHandlingByTravelCreatedAt", fields: ["travelId", "createdAt"], queryField: "palletHandlingByTravelCreatedAt")
+@key(name:"palletHandlingByCarrierTravelOperationDate", fields: ["carrierId", "travelStamp", "operationDate"], queryField: "palletHandlingByCarrierTravelOperationDate")
+@key(name:"palletHandlingByCustomerTravelOperationDate", fields: ["customerId", "travelStamp", "operationDate"], queryField: "palletHandlingByCustomerTravelOperationDate")
+# By companies
+@key(name:"palletHandlingByCarrierCustomerOperationDate", fields: ["carrierId", "customerId", "operationDate"], queryField: "palletHandlingByCarrierCustomerOperationDate")
+@key(name:"palletHandlingByCarrierReversalOperationDate", fields: ["carrierId", "reversalId", "operationDate"], queryField: "palletHandlingByCarrierReversalOperationDate")
+@key(name:"palletHandlingByCustomerReversalOperationDate", fields: ["customerId", "reversalId", "operationDate"], queryField: "palletHandlingByCustomerReversalOperationDate")
+@key(name:"palletHandlingByCustomerCarrierOperationDate", fields: ["customerId", "carrierId", "operationDate"], queryField: "palletHandlingByCustomerCarrierOperationDate")
+@auth(rules: [
+  { allow: owner, ownerField: "tenantCarrier", operations:  [ create, read, update, delete ]},
+  { allow: owner, ownerField: "tenantCustomer", operations:  [ read, update ]},
+  { allow: owner, ownerField: "tenantReversal", operations:  [ read, update ]}
+]){
+  id: ID!
+  stamp: ID!
+  # Info aziende
+  # Carrier
+  carrierId: ID!
+  tenantCarrier: ID!
+  carrierName: String!
+  # Customer
+  customerId: ID!
+  tenantCustomer: ID!
+  customerName: String!
+  # Reversal
+  reversalId: ID! # se non c'è uno storno da applicare inserisce il valore di default: "NO_REVERSAL" 
+  tenantReversal: ID
+  reversalName: String # se non c'è uno storno da applicare inserisce il valore di default: "NO_REVERSAL" 
+  # Date
+  createdAt: AWSDateTime!
+  operationDate: AWSDateTime!
+  updatedAt: AWSDateTime
+  # Quantità per operazione (quantity, note) - validi e non validi
+  # Carica
+  loadQuantity: Int # si intende quantità valida (escluse non conformi)
+  loadNote: String
+  disposableLoad: Int # quantità a perdere - esclusa dai calcoli in caricati (si fa riferimento ad EUR e pallet non conformi)
+  disposableLoadNote: String
+  # Scarica
+  unloadQuantity: Int # si intende quantità valida (escluse non conformi)
+  unloadNote: String
+  disposableUnload: Int # quantità a perdere - esclusa dai calcoli in scaricati (si fa riferimento ad EUR e pallet non conformi)
+  disposableUnloadNote: String
+  # Storno
+  reversalQuantity: Int
+  reversalNote: String
+  palletHandlingRefId: String # utile per le movimentazioni di storno, in modo da conoscere la movimentazione principale di riferimento dove sono scritte le info di carico/scarico
+  # Info viaggio
+  travelId: ID!
+  travelStamp: ID!
+  travel: Travel @connection(fields: ["travelId"])
+  waypoint: Waypoint # copy/paste from travel
+  carrierOperatorName: String # usually is driver name
+  carrierOperator: ProfileSummary # usually is driver
+  vehicleLicensePlate: String 
+  vehicleOperator: TravelVehicleSummary 
+  # Pallet required info
+  type: PalletHandlingType!
+  status: PalletHandlingStatus!
+  # Pallet fields for validation
+  # Carrier
+  carrierValidation: ValidationResponse
+  carrierValidatorName: String
+  carrierValidator: ProfileSummary
+  carrierValidationMessage: String
+  # Customer
+  customerValidation: ValidationResponse @auth(rules: [
+    { allow: owner, ownerField: "tenantCarrier", operations:  [ read ]},
+    { allow: owner, ownerField: "tenantCustomer", operations:  [ read, update ]},
+    { allow: owner, ownerField: "tenantReversal", operations:  [ read, update ]}
+  ])
+  customerValidatorName: String @auth(rules: [
+    { allow: owner, ownerField: "tenantCarrier", operations:  [ read ]},
+    { allow: owner, ownerField: "tenantCustomer", operations:  [ read, update ]},
+    { allow: owner, ownerField: "tenantReversal", operations:  [ read, update ]}
+  ])
+  customerValidator: ProfileSummary @auth(rules: [
+    { allow: owner, ownerField: "tenantCarrier", operations:  [ read ]},
+    { allow: owner, ownerField: "tenantCustomer", operations:  [ read, update ]},
+    { allow: owner, ownerField: "tenantReversal", operations:  [ read, update ]}
+  ])
+  customerValidationMessage: String
+  # Fields for attachments
+  isVoucher: Boolean
+  voucherImage: S3Object @auth(rules: [
+    { allow: owner, ownerField: "tenantCarrier", operations:  [ read, update ]},
+    { allow: owner, ownerField: "tenantCustomer", operations: [ read, update ]},
+    { allow: owner, ownerField: "tenantReversal", operations: [ read ]}
+  ])
+  files: [S3Object]  @auth(rules: [
+    { allow: owner, ownerField: "tenantCarrier", operations:  [ read, update ]},
+    { allow: owner, ownerField: "tenantCustomer", operations: [ read, update ]},
+    { allow: owner, ownerField: "tenantReversal", operations: [ read ]}
+  ])
+  # Additional data
+  # note: String
+  log: [Log]
+}
+
+
+# ----------------------------------
+# === NON MODEL TYPES
+# ----------------------------------
+type KeyValueType {
+  name: String
+  value: String
+}
+
+type ProfileSummary {
+  username: ID
+  companyId: String
+  name: String
+  email: AWSEmail
+  phone: String
+  job: String
+  task: String
+  tenant: String
+}
+
+# Documents
+type S3Object {
+  filename: String # Nome leggibile del file
+  identityId: ID 
+  bucket: String
+  region: String
+  key: String # Chiave del file indicata nello storage
+  extension: String
+  timestamp: String # Da usare come confronto nelle fasi di modifica
+}
+
+type File {
+  authorIdentityId: ID
+  filename: String
+  object: S3Object
+}
+
+# Data stream
+type Log {
+  authorId: ID!
+  author: AWSJSON # da usare preferibilmente per completezza del dato evitando un'altra query
+  description: String
+  timestamp: AWSTimestamp
+}
+
+# Geolocation
+type Checkpoint {
+  warehouseId: ID
+  extId: ID # link usato per relazionarci con software di pianificazione (36 char) 
+  thirdCompanyId: String # usato per definire i magazzini di terze parti
+  thirdCompanyOwner: String # usato per definire i magazzini di terze parti
+  thirdCompanyName: String # usato per definire i magazzini di terze parti
+  thirdCompanyVat: String # usato per definire i magazzini di terze parti
+  name: String
+  location: Location
+  contacts: [ContactSummary]
+  windows: [Window]
+  maxLength: String
+  enabledVehicles: [ComplexVehicleType]
+  tools: [WarehouseTools]
+  note: String
+}
+
+type Window {
+  start: String
+  end: String
+  days: [Int] # 1: Lunedi, 2: Martedì, ... 7: Domenica
+  type: WindowType
+}
+
+type ContactSummary {
+  contactId: ID
+  name: String
+  email: AWSEmail
+  phone: String
+  job: String
+}
+
+# Warehouses
+type Location {
+  place_id: String # place_id from google api
+  region: String
+  province: String
+  city: String
+  address: String
+  coordinate: [Float]
+}
+
+type CargoBay {
+  num: Int
+  vehicleSize: VehicleSize
+}
+
+# Vehicle
+type VehicleDimensions {
+  x: Float
+  y: Float
+  z: Float
+}
+
+# PreOrders
+type VehicleSummary {
+  type: ComplexVehicleType #ComplexVehicleType
+  equipment: [String] # paratia mobile, paratia fissa, transpallet, ecc.
+}
+
+# Order
+type DeliveryDocs {
+  date: AWSDate
+  number: String
+  files: [S3Object]
+  type: String
+}
+
+type CompanySummary {
+  id: ID
+  name: String
+  vatNumber: String
+  uniqueCode: String
+  pec: String
+}
+
+type DateTimeSlot {
+  from: AWSDateTime
+  to: AWSDateTime
+}
+
+type PalletInfo {
+  value: Int
+  size: String
+  type: PalletType
+  system: InterchangeSystem
+}
+
+# Travel
+type Waypoint {
+  id: ID
+  orders: [OrderTravelSummary]
+  companyName: String
+  companyId: String
+  tenantCompany: String
+  checkpoint: Checkpoint
+  estimatedLength: String
+  estimatedTime: String
+  completed: Boolean
+}
+
+type OrderTravelSummary {
+  orderId: ID
+  plannedId: ID
+  orderStamp: String
+  orderStatus: OrderStatus
+  operation: String
+  operationValue: Int
+}
+
+# Pallet section
+type TravelVehicleSummary {
+  licensePlate: String
+  name: String
+}
+
+type PalletVoucher {
+  releaseDate: String
+  deliveryDate: String
+  from: String #id carrier
+  to: String #id customer
+  by: String #id receiver
+  file: File
+}
+
+# ----------------------------------
+# === ENUMS
+#-----------------------------------
+
+enum CompanyType {
+  TRANSPORT
+  CLIENT
+}
+
+enum CustomerType {
+  SENDER
+  CARRIER
+  RECEIVER
+}
+
+# Enums: Punti di riferimento azienda
+enum ContactType {
+  ADMIN # Amministrazione
+  WAREHOUSE # Magazzini
+  DRIVE # Guida
+  ACCOUNTING # Contabilità
+  LOGISTICS # Logistica
+}
+
+enum WarehouseStatus {
+  ACTIVE
+  DISABLED
+  UNKNOWN # usato per i magazzini di terze parti
+}
+
+enum WarehouseSpecialization {
+  BOBINE
+  INFIAMMABILI
+  PROFILATI
+  DEPERIBILI
+  PICCOLI
+  GENERALE
+}
+
+enum WarehouseBuildingType {
+  APERTO
+  CAPANNONE
+  SEMINTERRATO
+  SILO
+  FRIGO
+  AUTOPORTANTE
+}
+
+enum WarehouseAutomationLevel {
+  LOW # bassa
+  MEDIUM # media
+  COMPLETE #totale
+}
+
+enum WarehouseScope {
+  DEPOSITO
+  INTERMEDIO
+  DISTRIBUZIONE
+}
+
+enum WarehouseTools {
+  C_ELEVATORE
+  C_RETRATTILE
+  C_COMMISSIONATORE
+  C_TRILATERALE
+  C_QUADRIDIREZIONALE
+  C_LATERALE
+  C_FUORISTRADA
+  C_SOLLEVATORE
+  C_CONTAINER
+  C_CINGOLATO
+  M_TRANSPALLET
+  E_TRANSPALLET
+  RIBALTA
+  S_IDRAULICA 
+}
+
+enum WindowType {
+  CARICO
+  SCARICO
+  GENERICO
+}
+
+# https://www.tdbg.de/it/assistenza/mezzi-di-trasporto-e-container/
+enum VehicleSize {
+  LOW12T
+  GRT12T
+}
+
+# Enums: Veicoli
+enum VehicleType {
+  FURGONE
+  TRATTORE
+  MOTRICE
+  RIMORCHIO
+  SEMIRIMORCHIO
+}
+
+enum ComplexVehicleType {
+  FURGONE
+  MOTRICE
+  AUTOARTICOLATO
+  AUTOTRENO
+  NONE
+  GENERICO
+}
+
+enum VehicleStatus {
+  DISPONIBILE     # Nel caso di veicoli complessi indica che è agganciato
+  NON_DISPONIBILE # Nel caso di veicolo complessi indica che è sganciato
+  IN_MARCIA
+}
+
+enum BulkheadType {
+  NESSUNA
+  MOBILE
+  FISSA
+}
+
+# Pre-Orders
+enum BillingType {
+  DIRETTO
+  GROUPAGE
+  SPOLA_GROUPAGE
+  DIRETTO_SCARICO_INTERMEDIO
+}
+
+enum PreOrderStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum ShipmentType {
+  DIRETTO
+  GROUPAGE
+}
+
+# Orders
+enum PalletType {
+  EPAL
+  EUR
+}
+
+enum OrderStatus {
+  PENDING # Da ritirare
+  PICKEDUP
+  STOCKED # Fermo in magazzino
+  DELIVERING
+  DELIVERED
+  ARCHIVED # Archiviato
+}
+
+enum PaymentCondition {
+  FRANCO       # Il venditore effettua la spedizione e paga il trasporto.
+  ASSEGNATO    # Il venditore spedisce la merce e il compratore deve pagare il trasporto al vettore al momento della consegna.
+  SCONOSCIUTO
+  # CONTRASSEGNO # Il venditore effettua la spedizione e paga il trasporto. Il compratore deve pagare il contrassegno relativo al valore della merce. Tale importo verrà poi pagato al venditore.
+}
+
+enum CheckStatus {
+  PENDING
+  PICKEDUP
+  RECORDING # Registrazione dell'assegno presso la sede del vettore
+  DELIVERING
+  DELIVERED
+  ARCHIVED
+}
+
+enum InterchangeSystem {
+  PARI # scambio alla pari
+  CAUZIONE # sistema cauzionale 
+  FATTURAZIONE # fatturazione pallet
+  NOLEGGIO # noleggio di pallet
+  PERDERE # pallet a perdere
+}
+
+# Travel
+enum TravelType {
+  PICKUP # Ritiro
+  DELIVERY # Consegna
+  DIRECT # Diretto
+  MIXED # Misto (carico, scarico, faccio quello che voglio...)
+}
+
+enum TravelStatus {
+  STATIONARY       # camion è fermo alla base
+  PICKUP     # camion sta effettuando il viaggio di ritiro della merce
+  DEPOT   # camion ha caricato tutto e sta rientrando con la merce al magazzino
+  DELIVERY   # camion sta effettuando il giro di consegne
+  RETURN    # camion ha consegnato tutta la merce e sta rientrando
+  COMPLETED # camion ha terminato il viaggio
+  ARCHIVED
+}
+
+# Pallet
+enum PalletHandlingStatus {
+  BOOKED # Contabilizzato
+  EXCLUDED # Escluso
+}
+
+enum ValidationResponse {
+  NOT_DECLARED
+  VERIFIED  # quando viene registrato ed è stato verificato e controllato
+  ERROR # quando viene rilevato un errore
+}
+
+enum PalletHandlingType {
+  TRADE
+  REVERSAL_TRADE
+  REVERSAL
+}
+
+# enum SubjectDetail {
+#   BILICO
+#   MOTRICE
+#   B80x120
+#   B100x120
+# }
+
+
+# ----------------------------------
+# === Subscriptions
+#-----------------------------------
+type Subscription {
+  # Company
+  onUpdateCompany(companyId: ID!): Company
+    @aws_subscribe(mutations: ["updateCompany"])
+
+  # Contacts
+  onCreateContact(tenant: ID!): Contact
+    @aws_subscribe(mutations: ["createContact"])
+  onUpdateContact(tenant: ID!): Contact
+    @aws_subscribe(mutations: ["updateContact"])
+  onDeleteContact(tenant: ID!): Contact
+    @aws_subscribe(mutations: ["deleteContact"])
+
+  # Warehouse
+  # onCreateWarehouse(tenant: ID!): Warehouse
+  #   @aws_subscribe(mutations: ["createWarehouse"])
+  # onUpdateWarehouse(tenant: ID!): Warehouse
+  #   @aws_subscribe(mutations: ["updateWarehouse"])
+  # onDeleteWarehouse(tenant: ID!): Warehouse
+  #   @aws_subscribe(mutations: ["deleteWarehouse"])
+
+  # PreOrder
+  # onCreatePreOrderByTenantSender(tenantSender: ID!): PreOrder
+  #   @aws_subscribe(mutations: ["createPreOrder"])
+  # onCreatePreOrderByTenantCarrier(tenantCarrier: ID!): PreOrder
+  #   @aws_subscribe(mutations: ["createPreOrder"])
+  # onUpdatePreOrderByTenantSender(tenantSender: ID!): PreOrder
+  #   @aws_subscribe(mutations: ["updatePreOrder"])
+  # onUpdatePreOrderByTenantCarrier(tenantCarrier: ID!): PreOrder
+  #   @aws_subscribe(mutations: ["updatePreOrder"])
+  # onDeletePreOrderByCarrier(tenantCarrier: ID!): PreOrder
+  #   @aws_subscribe(mutations: ["deletePreOrder"])
+
+  # Order
+  # onCreateOrderByTenantSender(tenantSender: ID!): Order
+  #   @aws_subscribe(mutations: ["createOrder"])
+  # onCreateOrderByTenantCarrier(tenantCarrier: ID!): Order
+  #   @aws_subscribe(mutations: ["createOrder"])
+  # onCreateOrderByTenantReceiver(tenantReceiver: ID!): Order
+  #   @aws_subscribe(mutations: ["createOrder"])
+  # onUpdateOrderByTenantSender(tenantSender: ID!): Order
+  #   @aws_subscribe(mutations: ["updateOrder"])
+  # onUpdateOrderByTenantCarrier(tenantCarrier: ID!): Order
+  #   @aws_subscribe(mutations: ["updateOrder"])
+  # onUpdateOrderByTenantReceiver(tenantReceiver: ID!): Order
+  #   @aws_subscribe(mutations: ["updateOrder"])
+  # onDeleteOrderByCarrier(tenantCarrier: ID!): Order
+  #   @aws_subscribe(mutations: ["deleteOrder"])
+  # onDeleteOrderBySender(tenantSender: ID!): Order
+  #   @aws_subscribe(mutations: ["deleteOrder"])
+  # onDeleteOrderByReceiver(tenantReceiver: ID!): Order
+  #   @aws_subscribe(mutations: ["deleteOrder"])
+}

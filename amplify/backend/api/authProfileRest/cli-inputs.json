@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "paths": {
+    "/register": {
+      "name": "/register",
+      "lambdaFunction": "LTSAuthProfile",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "create"
+        ]
+      }
+    },
+    "/update": {
+      "name": "/update",
+      "lambdaFunction": "LTSAuthProfile",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "create"
+        ]
+      }
+    },
+    "/restore": {
+      "name": "/restore",
+      "lambdaFunction": "LTSAuthProfile",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "create"
+        ]
+      }
+    },
+    "/logout": {
+      "name": "/logout",
+      "lambdaFunction": "LTSAuthProfile",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "create"
+        ]
+      }
+    },
+    "/refresh": {
+      "name": "/refresh",
+      "lambdaFunction": "LTSAuthProfile",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "create"
+        ]
+      }
+    },
+    "/auth": {
+      "name": "/auth",
+      "lambdaFunction": "LTSAuthProfile",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "create"
+        ]
+      }
+    }
+  }
+}

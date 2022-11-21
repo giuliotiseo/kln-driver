@@ -1,0 +1,15 @@
+{
+  "lambdaLayers": [],
+  "permissions": {
+    "auth": {
+      "ltsf4f53b30": [
+        "update"
+      ]
+    },
+    "api": {
+      "LTSGraphQl": [
+        "update"
+      ]
+    }
+  }
+}

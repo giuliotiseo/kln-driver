@@ -1,0 +1,17 @@
+{
+  "lambdaLayers": [],
+  "environmentVariableList": [
+    {
+      "cloudFormationParameterName": "accesstoken",
+      "environmentVariableName": "ACCESSTOKEN"
+    },
+    {
+      "cloudFormationParameterName": "refreshtoken",
+      "environmentVariableName": "REFRESHTOKEN"
+    },
+    {
+      "cloudFormationParameterName": "profiletable",
+      "environmentVariableName": "PROFILETABLE"
+    }
+  ]
+}

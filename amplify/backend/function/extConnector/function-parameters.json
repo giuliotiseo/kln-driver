@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "api": {
+      "LTSGraphQl": [
+        "read"
+      ]
+    }
+  },
+  "lambdaLayers": []
+}

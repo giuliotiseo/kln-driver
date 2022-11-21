@@ -1,0 +1,11 @@
+{
+  "AppSyncApiName": "LTSGraphQl",
+  "DynamoDBBillingMode": "PAY_PER_REQUEST",
+  "DynamoDBEnableServerSideEncryption": false,
+  "AuthCognitoUserPoolId": {
+    "Fn::GetAtt": [
+      "authltsf4f53b30",
+      "Outputs.UserPoolId"
+    ]
+  }
+}
