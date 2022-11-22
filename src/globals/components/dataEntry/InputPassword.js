@@ -11,10 +11,10 @@ export default function InputPassword({
   loading,
   contentClassName = "",
   inputClassName = "",
+  returnKeyType="done",
   disabled = false,
   value,
   callback = (payload) => console.log('Conferma testo <InputPassword />', payload),
-  onPressEnter = (payload) => console.log('Press enter <InputPassword />', payload),
   isError = false,
 }){
   return (
@@ -28,7 +28,8 @@ export default function InputPassword({
             secureTextEntry={true}
             disabled={disabled}
             value={value}
-            className={`outline-none border bg-light-200 dark:bg-dark-200 border-light-50 dark:border-dark-100 focus:border-secondary-300 dark:focus:border-secondary-300 text-dark-100 dark:text-light-300 rounded-md disabled:bg-light-100 dark:disabled:bg-dark-100 disabled:cursor-not-allowed disabled:opacity-50 w-full ${inputClassName} ${isError && 'input--error'} outline-none ${loading && 'pointer-events-none'}`}
+            returnKeyType={returnKeyType}
+            className={`outline-none border bg-light-200 dark:bg-dark-200 border-light-50 dark:border-dark-100 focus:border-cyan-500 dark:focus:border-cyan-500 text-dark-100 dark:text-light-300 rounded-md disabled:bg-light-100 dark:disabled:bg-dark-100 disabled:cursor-not-allowed disabled:opacity-50 w-full ${inputClassName} ${isError && 'input--error'} outline-none ${loading && 'pointer-events-none'}`}
             placeholder={placeholder}
             onChangeText={(value) => !loading && callback({ value, name: id, type: "password" })}
           />

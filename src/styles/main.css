@@ -2,46 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: "Outfit";
-  font-weight: normal;
-  src: url("../public/typography/Outfit-Regular.woff2") format("woff2"),
-       url("../public/typography/Outfit-Regular.woff") format("woff");
-}
-
-@font-face {
-  font-family: "Outfit";
-  font-weight: bold;
-  src: url("../public/typography/Outfit-Bold.woff") format("woff2"),
-       url("../public/typography/Outfit-Bold.woff") format("woff");
-}
-
-body {
-  margin: 0;
-  font-family: "Outfit", -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Chrome, Safari, Edge, Opera */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Firefox */
-input[type=number] {
-  -moz-appearance: textfield;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
 /* Complex classes */
 /* Backgrounds -------------------------------------------------------------------------- */
 @layer components {
@@ -251,4 +211,45 @@ code {
   .list__item {
     @apply relative border-b border-light-100 dark:border-dark-200 hover:bg-light-200 dark:hover:bg-dark-100 dark:hover:bg-opacity-60 last:border-b-0;
   }
+}
+
+
+@font-face {
+  font-family: "Outfit";
+  font-weight: normal;
+  src: url("../assets/typography/Outfit-Regular.woff2") format("woff2"),
+       url("../assets/typography/Outfit-Regular.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Outfit";
+  font-weight: bold;
+  src: url("../assets/typography/Outfit-Bold.woff") format("woff2"),
+       url("../assets/typography/Outfit-Bold.woff") format("woff");
+}
+
+body {
+  margin: 0;
+  font-family: "Outfit", -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
 }

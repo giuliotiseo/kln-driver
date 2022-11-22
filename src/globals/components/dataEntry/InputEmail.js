@@ -28,7 +28,7 @@ export default function InputEmail({
             autoComplete="email"
             disabled={disabled}
             onChangeText={(value) => !loading && callback({ value, name: id, type: "email" })}
-            className={`w-full outline-none border bg-light-200 dark:bg-dark-200 border-light-50 dark:border-dark-100 focus:border-secondary-300 dark:focus:border-secondary-300 text-dark-100 dark:text-light-300 px-2 py-4 rounded-md disabled:bg-light-100 dark:disabled:bg-dark-100 disabled:cursor-not-allowed disabled:opacity-50 ${isError && 'input--error'} ${disabled && 'input--disabled'} outline-none ${inputClassName}`}
+            className={`w-full outline-none border bg-light-200 dark:bg-dark-200 border-light-50 dark:border-dark-100 focus:border-cyan-500 dark:focus:border-cyan-500 text-dark-100 dark:text-light-300 px-2 py-4 rounded-md disabled:bg-light-100 dark:disabled:bg-dark-100 disabled:cursor-not-allowed disabled:opacity-50 ${isError && 'input--error'} ${disabled && 'input--disabled'} outline-none ${inputClassName}`}
             placeholder={placeholder}
           />
         </View>

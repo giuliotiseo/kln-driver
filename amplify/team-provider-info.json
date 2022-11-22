@@ -33,6 +33,9 @@
           "deploymentBucketName": "amplify-lts-master-132821-deployment",
           "s3Key": "amplify-builds/LTSAuthProfile-6d474375307975617947-build.zip"
         }
+      },
+      "storage": {
+        "ltsS3": {}
       }
     }
   }

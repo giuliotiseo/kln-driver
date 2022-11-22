@@ -11,21 +11,17 @@ export default function LoginScreen() {
   const [ password, setPassword ] = useState("");
   const [{ isLoading }, signIn ] = useSignIn();
 
+  if(isLoading) return <PageSpinner message="Accesso in corso" className="z-50 opacity-95" />
+
   return (
-    <View className="flex flex-col items-center justify-center w-full p-4">
-      { isLoading && <PageSpinner message="Accesso in corso" className="z-50 opacity-95" /> }
-
+    <View className="flex flex-col items-center justify-center w-full h-full p-4 bg-light-200">
       {/* KLN Intestazioni */}
-      <View className="flex flex-col mb-8">
-        <View className="flex items-center mb-4">
-          <Text className="text-4xl font-bold text-dark-100 dark:text-light-300">
-            KLN
-          </Text>
-        </View>
-
-        <Text className="text-center font-bold text-xl text-dark-100 dark:text-light-300">Ti diamo il benvenuto su LTS Driver</Text>
-        <Text className="text-center mt-2 text-dark-100 dark:text-light-300 text-lg">
-          Ricevi incarichi di trasporto e gestisci le operazioni di carico e scarico
+      <View className="flex flex-col mb-8 w-full">
+        <Text className="text-4xl text-left font-bold text-dark-100 dark:text-light-300">
+          Accedi
+        </Text>
+        <Text className="text-left mt-2 text-dark-100 dark:text-light-300 text-lg">
+          Inserisci i tuoi dati per continuare
         </Text>
       </View>
       
@@ -35,10 +31,11 @@ export default function LoginScreen() {
           label="Inserisci username o email"
           style="flex-col w-full"
           contentClassName="w-full text-lg"
-          labelClassName="block mb-2 text-gray-400 dark:text-gray-600"
+          labelClassName="block mb-2 text-left w-full text-gray-400 dark:text-gray-600"
           inputClassName="text-xl p-3"
           onBlurCallback={true}
           callback={({ value }) => setUsername(value)}
+          returnKeyType="next"
           value={username}
           showButton={false}
           disabled={isLoading}
@@ -50,33 +47,29 @@ export default function LoginScreen() {
           style="flex-col w-full mt-4"
           contentClassName="w-full"
           inputClassName="text-xl p-3"
-          labelClassName="block mb-2 text-gray-400 dark:text-gray-600"
+          labelClassName="block mb-2 text-left w-full text-gray-400 dark:text-gray-600"
           onBlurCallback={true}
           secureTextEntry={true}
+          placeholder="******"
           value={password}
           callback={({ value }) => setPassword(value)}
+          returnKeyType="next"
           disabled={isLoading}
         />
       </View>
 
       {/* KLN Intestazioni */}
-      <View className="w-full mt-4">
+      <View className="mt-4 w-full">
         <DefaultButton
           text="Accedi"
-          style="mt-4 w-full block p-4"
-          textClassName="block w-full font-bold uppercase block"
+          style="mt-4 inline-block p-4 ml-auto"
+          textClassName="font-bold uppercase block self-end"
           inputClassName="text-xl"
           loading={isLoading}
           loadingText="Accesso in corso"
           onPress={() => signIn(username, password)}
         />
       </View>
-
-
-      {/* <SignInForm
-        isLoading={isLoading}
-        callback={signIn}
-      /> */}
     </View>
   )
 }
